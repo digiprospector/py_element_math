@@ -22,6 +22,7 @@
         <nav class="operation-tabs" aria-label="运算类型">
           <button type="button" class="operation-tab active" data-op="+" aria-selected="true">加法</button>
           <button type="button" class="operation-tab" data-op="-" aria-selected="false">减法</button>
+          <button type="button" class="operation-tab" data-op="*" aria-selected="false">乘法</button>
         </nav>
       </div>
 
@@ -81,6 +82,14 @@
           <div id="borrow-section" class="control-section hidden">
             <h3>减法退位设定</h3>
             <div id="borrow-digits" class="digit-controls"></div>
+          </div>
+        </div>
+
+        <div id="mul-settings-section" class="tab-content-section hidden">
+          <div class="count-option">
+            <label class="inline">乘法每组数量
+              <input type="number" id="mul_count" value="0" min="0" max="200" />
+            </label>
           </div>
         </div>
       </div>

@@ -79,7 +79,7 @@ loadSettings().then(() => {
 });
 
 function setActiveOperator(operator) {
-  activeOperator = operator === "-" ? "-" : "+";
+  activeOperator = operator === "-" ? "-" : (operator === "*" ? "*" : "+");
   operatorTabs.forEach((tab) => {
     const selected = tab.dataset.op === activeOperator;
     tab.classList.toggle("active", selected);
@@ -88,15 +88,21 @@ function setActiveOperator(operator) {
 
   const currentOpLabel = $("#current-op-label");
   if (currentOpLabel) {
-    currentOpLabel.textContent = activeOperator === "-" ? "−" : "+";
+    currentOpLabel.textContent = activeOperator === "-" ? "−" : (activeOperator === "*" ? "×" : "+");
   }
 
   if (activeOperator === "+") {
     $("#add-settings-section").classList.remove("hidden");
     $("#sub-settings-section").classList.add("hidden");
-  } else {
+    $("#mul-settings-section").classList.add("hidden");
+  } else if (activeOperator === "-") {
     $("#add-settings-section").classList.add("hidden");
     $("#sub-settings-section").classList.remove("hidden");
+    $("#mul-settings-section").classList.add("hidden");
+  } else if (activeOperator === "*") {
+    $("#add-settings-section").classList.add("hidden");
+    $("#sub-settings-section").classList.add("hidden");
+    $("#mul-settings-section").classList.remove("hidden");
   }
 }
 
@@ -242,7 +248,8 @@ async function fetchProblems(count, op, specificPayload) {
   }
 
   if (allProblems.length < count) {
-    throw new Error(`可生成的 ${op === "+" ? "加法" : "减法"} 题目数量不足，请扩大范围或减少题目数量`);
+    const opName = op === "+" ? "加法" : (op === "-" ? "减法" : "乘法");
+    throw new Error(`可生成的 ${opName} 题目数量不足，请扩大范围或减少题目数量`);
   }
   return allProblems;
 }
@@ -251,10 +258,11 @@ async function generate() {
   messageEl.textContent = "";
   const addCount = Number($("#add_count").value) || 0;
   const subCount = Number($("#sub_count").value) || 0;
+  const mulCount = Number($("#mul_count").value) || 0;
   const groupCount = Math.max(1, Number($("#group_count").value) || 1);
 
-  if (addCount === 0 && subCount === 0) {
-    messageEl.textContent = "加法数量和减法数量不能同时为 0。";
+  if (addCount === 0 && subCount === 0 && mulCount === 0) {
+    messageEl.textContent = "加法、减法和乘法数量不能同时为 0。";
     return;
   }
 
@@ -262,6 +270,7 @@ async function generate() {
 
   let allAddProblems = [];
   let allSubProblems = [];
+  let allMulProblems = [];
 
   try {
     if (addCount > 0) {
@@ -285,6 +294,15 @@ async function generate() {
       };
       allSubProblems = await fetchProblems(subCount * groupCount, "-", subPayload);
     }
+    if (mulCount > 0) {
+      const mulPayload = {
+        a_min: payload.a_min,
+        a_max: payload.a_max,
+        b_min: payload.b_min,
+        b_max: payload.b_max,
+      };
+      allMulProblems = await fetchProblems(mulCount * groupCount, "*", mulPayload);
+    }
   } catch (err) {
     messageEl.textContent = "生成失败: " + err.message;
     return;
@@ -294,7 +312,8 @@ async function generate() {
   for (let groupIndex = 0; groupIndex < groupCount; groupIndex++) {
     const groupAdd = allAddProblems.slice(groupIndex * addCount, (groupIndex + 1) * addCount);
     const groupSub = allSubProblems.slice(groupIndex * subCount, (groupIndex + 1) * subCount);
-    const groupProblems = shuffle([...groupAdd, ...groupSub]);
+    const groupMul = allMulProblems.slice(groupIndex * mulCount, (groupIndex + 1) * mulCount);
+    const groupProblems = shuffle([...groupAdd, ...groupSub, ...groupMul]);
     groups.push(groupProblems);
   }
 
@@ -457,6 +476,7 @@ async function loadSettings() {
     // populate inputs
     if (settings.add_count !== undefined) $("#add_count").value = settings.add_count;
     if (settings.sub_count !== undefined) $("#sub_count").value = settings.sub_count;
+    if (settings.mul_count !== undefined) $("#mul_count").value = settings.mul_count;
     if (settings.group_count !== undefined) $("#group_count").value = settings.group_count;
     if (settings.a_min !== undefined) $("#a_min").value = settings.a_min;
     if (settings.a_max !== undefined) $("#a_max").value = settings.a_max;
@@ -471,7 +491,7 @@ async function loadSettings() {
 }
 
 function getPayload() {
-  const operators = ["+", "-"];
+  const operators = ["+", "-", "*"];
 
   // 收集进位控制:按数位分组检查
   const carryControl = {};
@@ -524,11 +544,13 @@ function getPayload() {
 
   const add_count = Number($("#add_count").value) || 0;
   const sub_count = Number($("#sub_count").value) || 0;
+  const mul_count = Number($("#mul_count").value) || 0;
 
   return {
-    count: add_count + sub_count,
+    count: add_count + sub_count + mul_count,
     add_count: add_count,
     sub_count: sub_count,
+    mul_count: mul_count,
     group_count: Number($("#group_count").value) || 1,
     a_min: Number($("#a_min").value),
     a_max: Number($("#a_max").value),
