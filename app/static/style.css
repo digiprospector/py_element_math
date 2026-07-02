@@ -365,6 +365,43 @@ button:hover { filter: brightness(0.97); }
 
 }
 
+/* 分页导航栏 */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin: 1.2rem 0;
+  padding: 0.5rem;
+  background: #f1f5f9;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.page-indicator {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #334155;
+  min-width: 7.5rem;
+  text-align: center;
+}
+
+.pagination button {
+  min-width: 5rem;
+  padding: 0.4rem 0.8rem;
+  font-weight: 600;
+}
+
+/* 屏幕上（GUI）只显示当前激活页的题目组，打印时全显示 */
+@media screen {
+  .problem-group {
+    display: none;
+  }
+  .problem-group.active {
+    display: block !important;
+  }
+}
+
 /* 打印排版 */
 .print-only { display: none; }
 @media print {

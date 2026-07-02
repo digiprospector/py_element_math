@@ -18,6 +18,12 @@ const saveSettingsBtn = $("#save-settings");
 const noNegativeOption = $("#no-negative-option");
 const operatorTabs = Array.from(document.querySelectorAll(".operation-tab"));
 
+let currentPageIndex = 0;
+const paginationControls = $("#pagination-controls");
+const prevPageBtn = $("#prev-page");
+const nextPageBtn = $("#next-page");
+const pageIndicator = $("#page-indicator");
+
 // 数字范围输入框
 const aMinInput = $("#a_min");
 const aMaxInput = $("#a_max");
@@ -49,6 +55,22 @@ operatorTabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     setActiveOperator(tab.dataset.op || "+");
   });
+});
+
+prevPageBtn.addEventListener("click", () => {
+  if (currentPageIndex > 0) {
+    currentPageIndex -= 1;
+    updatePaginationUI();
+    scoreEl.textContent = "";
+  }
+});
+
+nextPageBtn.addEventListener("click", () => {
+  if (currentPageIndex < currentGroups.length - 1) {
+    currentPageIndex += 1;
+    updatePaginationUI();
+    scoreEl.textContent = "";
+  }
 });
 
 // 初始化时更新一次
@@ -277,6 +299,7 @@ async function generate() {
   }
 
   currentGroups = groups;
+  currentPageIndex = 0;
   render();
 }
 
@@ -337,19 +360,42 @@ function render() {
     problemGroupsEl.appendChild(section);
   });
 
+  if (currentGroups.length > 1) {
+    paginationControls.classList.remove("hidden");
+  } else {
+    paginationControls.classList.add("hidden");
+  }
+  updatePaginationUI();
+
   toolbar.classList.remove("hidden");
 }
 
+function updatePaginationUI() {
+  const groups = problemGroupsEl.querySelectorAll(".problem-group");
+  groups.forEach((group, index) => {
+    if (index === currentPageIndex) {
+      group.classList.add("active");
+    } else {
+      group.classList.remove("active");
+    }
+  });
+
+  pageIndicator.textContent = `第 ${currentPageIndex + 1} 页 / 共 ${currentGroups.length} 页`;
+  prevPageBtn.disabled = currentPageIndex === 0;
+  nextPageBtn.disabled = currentPageIndex === currentGroups.length - 1;
+}
+
 function grade() {
-  const firstGroupProblems = currentGroups[0] || [];
-  if (firstGroupProblems.length === 0) return;
-  const firstGroup = problemGroupsEl.querySelector(".problem-group");
-  if (!firstGroup) return;
+  const currentGroupProblems = currentGroups[currentPageIndex] || [];
+  if (currentGroupProblems.length === 0) return;
+  const groups = problemGroupsEl.querySelectorAll(".problem-group");
+  const currentGroupEl = groups[currentPageIndex];
+  if (!currentGroupEl) return;
 
   let correctCount = 0;
   let answered = 0;
 
-  firstGroup.querySelectorAll("li").forEach((li, i) => {
+  currentGroupEl.querySelectorAll("li").forEach((li, i) => {
     const input = li.querySelector(".ans");
     const mark = li.querySelector(".mark");
     const val = input.value.trim();
@@ -362,7 +408,7 @@ function grade() {
       return;
     }
     answered += 1;
-    const ok = Number(val) === firstGroupProblems[i].answer;
+    const ok = Number(val) === currentGroupProblems[i].answer;
     if (ok) {
       correctCount += 1;
       mark.textContent = "✓";
@@ -375,11 +421,12 @@ function grade() {
     }
   });
 
-  const total = firstGroupProblems.length;
-  scoreEl.textContent = `已答 ${answered}/${total},正确 ${correctCount},得分 ${Math.round(
+  const total = currentGroupProblems.length;
+  scoreEl.textContent = `第 ${currentPageIndex + 1} 页：已答 ${answered}/${total},正确 ${correctCount},得分 ${Math.round(
     (correctCount / total) * 100
   )} 分`;
 }
+
 
 saveSettingsBtn.addEventListener("click", async () => {
   const payload = getPayload();
