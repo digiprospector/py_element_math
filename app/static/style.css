@@ -313,12 +313,18 @@ button:hover { filter: brightness(0.97); }
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.6rem 2rem;
-  padding-left: 2.2rem;
+  padding-left: 0.5rem;
   margin: 1rem 0;
+  list-style: none; /* 移除默认序号 */
 }
 .problems li {
   padding: 0.35rem 0;
   font-size: 1.15rem;
+}
+.seq {
+  font-weight: bold;
+  color: #4b5563;
+  margin-right: 0.3rem;
 }
 .q { display: inline-block; min-width: 8.5rem; }
 .ans {
@@ -521,75 +527,86 @@ button:hover { filter: brightness(0.97); }
 }
 
 /* PDF Mode Styles (for html2pdf generation) - EXACTLY MATCHING @media print */
-body.pdf-mode {
+.pdf-mode {
   max-width: none !important;
+  width: 190mm !important;
+  box-sizing: border-box !important;
   font-size: 12pt !important;
   line-height: 1.3 !important;
   padding: 0 !important;
   background: #fff !important;
 }
-body.pdf-mode .no-print {
+.pdf-mode .no-print {
   display: none !important;
 }
-body.pdf-mode .print-only {
+.pdf-mode .print-only {
   display: block !important;
 }
-body.pdf-mode h1 {
+.pdf-mode h1 {
   font-size: 18pt !important;
   margin: 0 0 0.6rem 0 !important;
   text-align: center !important;
 }
-body.pdf-mode .print-header {
+.pdf-mode .print-header {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
   gap: 2cm !important;
-  margin-bottom: 0.8rem !important;
+  margin-bottom: 0.7rem !important;
   font-size: 11pt !important;
   border-bottom: 1px solid #999 !important;
-  padding-bottom: 0.4rem !important;
+  padding-bottom: 0.25rem !important;
 }
-body.pdf-mode .print-header .field {
+.pdf-mode .print-header .field {
   flex: 1 !important;
   text-align: left !important;
   white-space: nowrap !important;
 }
-body.pdf-mode .problem-group .problems {
+.pdf-mode .problem-group .problems {
   display: grid !important;
   grid-template-columns: repeat(4, 1fr) !important;
   gap: 0 0.6rem !important;
-  margin-top: 0.5rem !important;
+  margin-top: 0.4rem !important;
   list-style: none !important;
   padding: 0 !important;
 }
-body.pdf-mode .problem-group {
+.pdf-mode .problem-group {
+  display: block !important;
   break-inside: avoid !important;
   page-break-inside: avoid !important;
-  margin: 0 0 0.8rem !important;
+  margin: 0 0 2.2rem !important; /* 加大两组之间的间隔，撑满页面 */
 }
-body.pdf-mode .problem {
+.pdf-mode .problem {
   font-size: 13pt !important;
-  padding: 0 !important;
+  padding: 0.36rem 0 !important; /* 加大行距，使120题刚好占满一页 */
   line-height: 1 !important;
   page-break-inside: avoid !important;
+  display: flex !important;
+  align-items: center !important;
+  white-space: nowrap !important;
 }
-body.pdf-mode .problem .answer {
+.pdf-mode .q {
+  min-width: unset !important;
+  display: inline !important;
+  margin-right: 0.2rem !important;
+}
+.pdf-mode .problem .answer {
   display: none !important;
 }
-body.pdf-mode .ans {
+.pdf-mode .ans {
   display: none !important;
 }
-body.pdf-mode .correct {
+.pdf-mode .correct {
   display: none !important;
 }
-body.pdf-mode .mark {
+.pdf-mode .mark {
   display: none !important;
 }
-body.pdf-mode .problem input {
-  display: inline-block !important; /* 强制显示输入框下划线 */
+.pdf-mode .problem input {
+  display: inline-block !important; 
   width: 3rem !important;
   border: none !important;
-  border-bottom: 1px solid #666 !important;
+  border-bottom: none !important; /* 题目的 PDF 中等号后显示为空格，没有横线 */
   font-size: 12pt !important;
   text-align: center !important;
   background: transparent !important;
@@ -597,5 +614,6 @@ body.pdf-mode .problem input {
   padding: 0 !important;
   height: auto !important;
 }
+
 
 

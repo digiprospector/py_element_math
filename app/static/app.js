@@ -375,9 +375,17 @@ function render() {
     const list = document.createElement("ol");
     list.className = "problems";
 
+    const totalCount = groupProblems.length;
+    const maxDigits = Math.max(2, String(totalCount).length); // 至少补齐到两位 (如 01. 02.)
+
     groupProblems.forEach((p, i) => {
       const li = document.createElement("li");
       li.className = "problem";
+
+      // 创建序号 span 并根据数量前补 0
+      const seq = document.createElement("span");
+      seq.className = "seq";
+      seq.textContent = `${String(i + 1).padStart(maxDigits, "0")}. `;
 
       const q = document.createElement("span");
       q.className = "q";
@@ -398,7 +406,7 @@ function render() {
       const mark = document.createElement("span");
       mark.className = "mark";
 
-      li.append(q, input, correct, mark);
+      li.append(seq, q, input, correct, mark);
       list.appendChild(li);
     });
 
@@ -674,17 +682,22 @@ async function generatePDF() {
     const date = new Date();
     const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
 
-    // 进入 PDF 渲染模式 (在 body 上添加类名，应用专门为 PDF 渲染准备的 CSS)
+    // 进入 PDF 渲染模式 (在 body 和容器上添加类名，应用专门为 PDF 渲染准备的 CSS)
     document.body.classList.add("pdf-mode");
+    problemGroupsEl.classList.add("pdf-mode");
 
     const pdfOpts = {
       margin: [15, 10, 15, 10],
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["css", "legacy"] }
     };
 
     // ── PDF 1：不含答案 ──
+    document.querySelectorAll(".ans").forEach((el) => {
+      el.style.setProperty("display", "inline-block", "important");
+    });
     document.querySelectorAll(".correct").forEach((el) => {
       el.style.setProperty("display", "none", "important");
     });
@@ -695,7 +708,10 @@ async function generatePDF() {
 
     await new Promise((r) => setTimeout(r, 600));
 
-    // ── PDF 2：含答案 ──
+    // ── PDF 2：含答案 (隐藏下划线输入框，让正确答案紧跟等号后) ──
+    document.querySelectorAll(".ans").forEach((el) => {
+      el.style.setProperty("display", "none", "important");
+    });
     document.querySelectorAll(".correct").forEach((el) => {
       el.style.setProperty("display", "inline-block", "important");
     });
@@ -711,6 +727,10 @@ async function generatePDF() {
   } finally {
     // 退出 PDF 渲染模式，恢复正常显示
     document.body.classList.remove("pdf-mode");
+    problemGroupsEl.classList.remove("pdf-mode");
+    document.querySelectorAll(".ans").forEach((el) => {
+      el.style.display = "";
+    });
     document.querySelectorAll(".correct").forEach((el) => {
       el.style.display = "";
     });
