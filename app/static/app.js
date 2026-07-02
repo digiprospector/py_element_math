@@ -24,12 +24,6 @@ const prevPageBtn = $("#prev-page");
 const nextPageBtn = $("#next-page");
 const pageIndicator = $("#page-indicator");
 
-// 数字范围输入框
-const aMinInput = $("#a_min");
-const aMaxInput = $("#a_max");
-const bMinInput = $("#b_min");
-const bMaxInput = $("#b_max");
-
 // 进位/退位控制区
 const carrySection = $("#carry-section");
 const borrowSection = $("#borrow-section");
@@ -45,9 +39,15 @@ form.addEventListener("submit", async (e) => {
   await generate();
 });
 
-// 监听范围变化,动态更新进位/退位控制
-[aMinInput, aMaxInput, bMinInput, bMaxInput].forEach((input) => {
-  input.addEventListener("input", updateCarryBorrowControls);
+// 监听加法范围变化,动态更新进位控制
+["add_a_min", "add_a_max", "add_b_min", "add_b_max"].forEach((id) => {
+  const el = $("#" + id);
+  if (el) el.addEventListener("input", updateCarryBorrowControls);
+});
+// 监听减法范围变化,动态更新退位控制
+["sub_a_min", "sub_a_max", "sub_b_min", "sub_b_max"].forEach((id) => {
+  const el = $("#" + id);
+  if (el) el.addEventListener("input", updateCarryBorrowControls);
 });
 
 // 监听左侧运算类型 tab 切换
@@ -116,24 +116,29 @@ function setActiveOperator(operator) {
 
 
 function updateCarryBorrowControls() {
-  const aMin = Number(aMinInput.value);
-  const aMax = Number(aMaxInput.value);
-  const bMin = Number(bMinInput.value);
-  const bMax = Number(bMaxInput.value);
+  // 加法进位控制:基于加法范围
+  const addAMax = Number($("#add_a_max")?.value || 0);
+  const addBMax = Number($("#add_b_max")?.value || 0);
+  const addMax = Math.max(addAMax, addBMax, addAMax + addBMax);
+  const addDigits = addMax > 0 ? Math.floor(Math.log10(addMax)) + 1 : 1;
 
-  // 计算最大可能的数值范围
-  const maxNum = Math.max(aMax, bMax, aMax + bMax);
-  const maxDigits = maxNum > 0 ? Math.floor(Math.log10(maxNum)) + 1 : 1;
+  // 减法退位控制:基于减法范围
+  const subAMax = Number($("#sub_a_max")?.value || 0);
+  const subBMax = Number($("#sub_b_max")?.value || 0);
+  const subMax = Math.max(subAMax, subBMax, subAMax + subBMax);
+  const subDigits = subMax > 0 ? Math.floor(Math.log10(subMax)) + 1 : 1;
 
-  console.log(`范围检测: aMax=${aMax}, bMax=${bMax}, maxNum=${maxNum}, maxDigits=${maxDigits}`);
-
-  if (maxDigits > 1) {
-    renderDigitControls(carryDigits, maxDigits - 1, "carry");
-    renderDigitControls(borrowDigits, maxDigits - 1, "borrow");
+  if (addDigits > 1) {
+    renderDigitControls(carryDigits, addDigits - 1, "carry");
     carrySection.classList.remove("hidden");
-    borrowSection.classList.remove("hidden");
   } else {
     carrySection.classList.add("hidden");
+  }
+
+  if (subDigits > 1) {
+    renderDigitControls(borrowDigits, subDigits - 1, "borrow");
+    borrowSection.classList.remove("hidden");
+  } else {
     borrowSection.classList.add("hidden");
   }
 }
@@ -285,20 +290,20 @@ async function generate() {
   try {
     if (addCount > 0) {
       const addPayload = {
-        a_min: payload.a_min,
-        a_max: payload.a_max,
-        b_min: payload.b_min,
-        b_max: payload.b_max,
+        a_min: Number($("#add_a_min").value),
+        a_max: Number($("#add_a_max").value),
+        b_min: Number($("#add_b_min").value),
+        b_max: Number($("#add_b_max").value),
         carry_control: payload.carry_control,
       };
       allAddProblems = await fetchProblems(addCount * groupCount, "+", addPayload);
     }
     if (subCount > 0) {
       const subPayload = {
-        a_min: payload.a_min,
-        a_max: payload.a_max,
-        b_min: payload.b_min,
-        b_max: payload.b_max,
+        a_min: Number($("#sub_a_min").value),
+        a_max: Number($("#sub_a_max").value),
+        b_min: Number($("#sub_b_min").value),
+        b_max: Number($("#sub_b_max").value),
         borrow_control: payload.borrow_control,
         no_negative: payload.no_negative,
       };
@@ -306,19 +311,19 @@ async function generate() {
     }
     if (mulCount > 0) {
       const mulPayload = {
-        a_min: payload.a_min,
-        a_max: payload.a_max,
-        b_min: payload.b_min,
-        b_max: payload.b_max,
+        a_min: Number($("#mul_a_min").value),
+        a_max: Number($("#mul_a_max").value),
+        b_min: Number($("#mul_b_min").value),
+        b_max: Number($("#mul_b_max").value),
       };
       allMulProblems = await fetchProblems(mulCount * groupCount, "*", mulPayload);
     }
     if (divCount > 0) {
       const divPayload = {
-        a_min: payload.a_min,
-        a_max: payload.a_max,
-        b_min: payload.b_min,
-        b_max: payload.b_max,
+        a_min: Number($("#div_a_min").value),
+        a_max: Number($("#div_a_max").value),
+        b_min: Number($("#div_b_min").value),
+        b_max: Number($("#div_b_max").value),
         division_control: payload.division_control,
       };
       allDivProblems = await fetchProblems(divCount * groupCount, "/", divPayload);
@@ -513,14 +518,30 @@ async function loadSettings() {
 
     // populate inputs
     if (settings.add_count !== undefined) $("#add_count").value = settings.add_count;
+    if (settings.add_a_min !== undefined) $("#add_a_min").value = settings.add_a_min;
+    if (settings.add_a_max !== undefined) $("#add_a_max").value = settings.add_a_max;
+    if (settings.add_b_min !== undefined) $("#add_b_min").value = settings.add_b_min;
+    if (settings.add_b_max !== undefined) $("#add_b_max").value = settings.add_b_max;
+
     if (settings.sub_count !== undefined) $("#sub_count").value = settings.sub_count;
+    if (settings.sub_a_min !== undefined) $("#sub_a_min").value = settings.sub_a_min;
+    if (settings.sub_a_max !== undefined) $("#sub_a_max").value = settings.sub_a_max;
+    if (settings.sub_b_min !== undefined) $("#sub_b_min").value = settings.sub_b_min;
+    if (settings.sub_b_max !== undefined) $("#sub_b_max").value = settings.sub_b_max;
+
     if (settings.mul_count !== undefined) $("#mul_count").value = settings.mul_count;
+    if (settings.mul_a_min !== undefined) $("#mul_a_min").value = settings.mul_a_min;
+    if (settings.mul_a_max !== undefined) $("#mul_a_max").value = settings.mul_a_max;
+    if (settings.mul_b_min !== undefined) $("#mul_b_min").value = settings.mul_b_min;
+    if (settings.mul_b_max !== undefined) $("#mul_b_max").value = settings.mul_b_max;
+
     if (settings.div_count !== undefined) $("#div_count").value = settings.div_count;
+    if (settings.div_a_min !== undefined) $("#div_a_min").value = settings.div_a_min;
+    if (settings.div_a_max !== undefined) $("#div_a_max").value = settings.div_a_max;
+    if (settings.div_b_min !== undefined) $("#div_b_min").value = settings.div_b_min;
+    if (settings.div_b_max !== undefined) $("#div_b_max").value = settings.div_b_max;
+
     if (settings.group_count !== undefined) $("#group_count").value = settings.group_count;
-    if (settings.a_min !== undefined) $("#a_min").value = settings.a_min;
-    if (settings.a_max !== undefined) $("#a_max").value = settings.a_max;
-    if (settings.b_min !== undefined) $("#b_min").value = settings.b_min;
-    if (settings.b_max !== undefined) $("#b_max").value = settings.b_max;
     if (settings.no_negative !== undefined) $("#no_negative").checked = settings.no_negative;
     if (settings.division_control !== undefined) {
       const val = settings.division_control;
@@ -610,15 +631,27 @@ function getPayload() {
 
   return {
     count: add_count + sub_count + mul_count + div_count,
-    add_count: add_count,
-    sub_count: sub_count,
-    mul_count: mul_count,
-    div_count: div_count,
+    add_count,
+    add_a_min: Number($("#add_a_min").value),
+    add_a_max: Number($("#add_a_max").value),
+    add_b_min: Number($("#add_b_min").value),
+    add_b_max: Number($("#add_b_max").value),
+    sub_count,
+    sub_a_min: Number($("#sub_a_min").value),
+    sub_a_max: Number($("#sub_a_max").value),
+    sub_b_min: Number($("#sub_b_min").value),
+    sub_b_max: Number($("#sub_b_max").value),
+    mul_count,
+    mul_a_min: Number($("#mul_a_min").value),
+    mul_a_max: Number($("#mul_a_max").value),
+    mul_b_min: Number($("#mul_b_min").value),
+    mul_b_max: Number($("#mul_b_max").value),
+    div_count,
+    div_a_min: Number($("#div_a_min").value),
+    div_a_max: Number($("#div_a_max").value),
+    div_b_min: Number($("#div_b_min").value),
+    div_b_max: Number($("#div_b_max").value),
     group_count: Number($("#group_count").value) || 1,
-    a_min: Number($("#a_min").value),
-    a_max: Number($("#a_max").value),
-    b_min: Number($("#b_min").value),
-    b_max: Number($("#b_max").value),
     operators,
     no_negative: $("#no_negative").checked,
     division_control: divisionControl,

@@ -181,6 +181,47 @@ header h1 {
   font-size: 0.95rem;
 }
 
+/* 各运算独立数值范围配置 */
+.range-config {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+  padding: 0.6rem 0.8rem;
+  background: #f1f5f9;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+}
+
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.9rem;
+}
+
+.range-label {
+  font-weight: 700;
+  color: #374151;
+  min-width: 4.5rem;
+  font-size: 0.85rem;
+}
+
+.range-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #374151;
+}
+
+.range-row input[type="number"] {
+  width: 4.5rem;
+  padding: 0.25rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 0.9rem;
+}
+
 .options {
   display: flex;
   align-items: center;
