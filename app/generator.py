@@ -27,7 +27,7 @@ class Problem:
     a: int
     b: int
     op: str
-    answer: int
+    answer: int | str
 
     @property
     def text(self) -> str:
@@ -145,6 +145,7 @@ def _make_one(
     no_negative: bool,
     carry_control: dict[int, CarryMode] | None,
     borrow_control: dict[int, BorrowMode] | None,
+    division_control: Literal["no_remainder", "with_remainder", "any"] = "any",
 ) -> Problem:
     """按指定运算生成一道题,两个操作数各取自己的范围。"""
     if op == "+":
@@ -159,12 +160,54 @@ def _make_one(
         return Problem(a, b, op, a * b)
 
     if op == "/":
-        divisor = random.randint(max(1, b_min), max(1, b_max))
-        q_lo = math.ceil(a_min / divisor)
-        q_hi = math.floor(a_max / divisor)
-        quotient = random.randint(q_lo, q_hi) if q_hi >= q_lo else q_lo
-        dividend = divisor * quotient
-        return Problem(dividend, divisor, op, quotient)
+        if division_control == "with_remainder":
+            max_attempts = 500
+            for _ in range(max_attempts):
+                div_min = max(2, b_min)
+                div_max = max(2, b_max)
+                if div_min > div_max:
+                    divisor = div_min
+                else:
+                    divisor = random.randint(div_min, div_max)
+                
+                a = random.randint(a_min, a_max)
+                q = a // divisor
+                r = a % divisor
+                if r > 0:
+                    return Problem(a, divisor, op, f"{q}......{r}")
+            
+            # Fallback
+            divisor = random.randint(max(2, b_min), max(2, b_max))
+            a = random.randint(a_min, a_max)
+            q = a // divisor
+            r = a % divisor
+            if r > 0:
+                return Problem(a, divisor, op, f"{q}......{r}")
+            return Problem(a, divisor, op, q)
+        elif division_control == "no_remainder":
+            divisor = random.randint(max(1, b_min), max(1, b_max))
+            q_lo = math.ceil(a_min / divisor)
+            q_hi = math.floor(a_max / divisor)
+            quotient = random.randint(q_lo, q_hi) if q_hi >= q_lo else q_lo
+            dividend = divisor * quotient
+            return Problem(dividend, divisor, op, quotient)
+        else:
+            # any
+            if random.choice([True, False]):
+                div_min = max(2, b_min)
+                div_max = max(2, b_max)
+                divisor = random.randint(div_min, div_max) if div_max >= div_min else div_min
+                a = random.randint(a_min, a_max)
+                q = a // divisor
+                r = a % divisor
+                if r > 0:
+                    return Problem(a, divisor, op, f"{q}......{r}")
+            divisor = random.randint(max(1, b_min), max(1, b_max))
+            q_lo = math.ceil(a_min / divisor)
+            q_hi = math.floor(a_max / divisor)
+            quotient = random.randint(q_lo, q_hi) if q_hi >= q_lo else q_lo
+            dividend = divisor * quotient
+            return Problem(dividend, divisor, op, quotient)
 
     raise ValueError(f"不支持的运算符: {op!r}")
 
@@ -183,6 +226,7 @@ def generate(
     no_negative: bool = True,
     carry_control: dict[int, CarryMode] | None = None,
     borrow_control: dict[int, BorrowMode] | None = None,
+    division_control: Literal["no_remainder", "with_remainder", "any"] = "any",
 ) -> list[Problem]:
     """生成 ``count`` 道口算题。
 
@@ -230,6 +274,7 @@ def generate(
             no_negative,
             carry_ctrl,
             borrow_ctrl,
+            division_control,
         )
         key = _problem_key(problem)
         if key in seen:

@@ -36,6 +36,7 @@ class GenerateRequest(BaseModel):
     borrow_control: Dict[int, Literal["borrow", "no_borrow", "any"]] | None = Field(
         None, description="减法退位控制,键为数位,值为borrow/no_borrow/any"
     )
+    division_control: Literal["no_remainder", "with_remainder", "any"] = Field("any", description="除法余数控制")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -58,6 +59,7 @@ def api_generate(req: GenerateRequest):
             req.no_negative,
             req.carry_control,
             req.borrow_control,
+            division_control=req.division_control,
         )
         print(f"生成 {len(problems)} 道题")
         # 调试:检查前3道题的进位情况
@@ -75,13 +77,15 @@ class UserSettings(BaseModel):
     add_count: int = Field(10)
     sub_count: int = Field(10)
     mul_count: int = Field(0)
+    div_count: int = Field(0)
     group_count: int = Field(1)
     a_min: int = Field(0)
     a_max: int = Field(20)
     b_min: int = Field(0)
     b_max: int = Field(20)
-    operators: List[str] = Field(default_factory=lambda: ["+", "-", "*"])
+    operators: List[str] = Field(default_factory=lambda: ["+", "-", "*", "/"])
     no_negative: bool = Field(True)
+    division_control: Literal["no_remainder", "with_remainder", "any"] = Field("any")
     carry_control: Dict[int, Literal["carry", "no_carry", "any"]] | None = Field(None)
     borrow_control: Dict[int, Literal["borrow", "no_borrow", "any"]] | None = Field(None)
 

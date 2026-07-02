@@ -79,7 +79,7 @@ loadSettings().then(() => {
 });
 
 function setActiveOperator(operator) {
-  activeOperator = operator === "-" ? "-" : (operator === "*" ? "*" : "+");
+  activeOperator = operator === "-" ? "-" : (operator === "*" ? "*" : (operator === "/" ? "/" : "+"));
   operatorTabs.forEach((tab) => {
     const selected = tab.dataset.op === activeOperator;
     tab.classList.toggle("active", selected);
@@ -88,21 +88,29 @@ function setActiveOperator(operator) {
 
   const currentOpLabel = $("#current-op-label");
   if (currentOpLabel) {
-    currentOpLabel.textContent = activeOperator === "-" ? "−" : (activeOperator === "*" ? "×" : "+");
+    currentOpLabel.textContent = activeOperator === "-" ? "−" : (activeOperator === "*" ? "×" : (activeOperator === "/" ? "÷" : "+"));
   }
 
   if (activeOperator === "+") {
     $("#add-settings-section").classList.remove("hidden");
     $("#sub-settings-section").classList.add("hidden");
     $("#mul-settings-section").classList.add("hidden");
+    $("#div-settings-section").classList.add("hidden");
   } else if (activeOperator === "-") {
     $("#add-settings-section").classList.add("hidden");
     $("#sub-settings-section").classList.remove("hidden");
     $("#mul-settings-section").classList.add("hidden");
+    $("#div-settings-section").classList.add("hidden");
   } else if (activeOperator === "*") {
     $("#add-settings-section").classList.add("hidden");
     $("#sub-settings-section").classList.add("hidden");
     $("#mul-settings-section").classList.remove("hidden");
+    $("#div-settings-section").classList.add("hidden");
+  } else if (activeOperator === "/") {
+    $("#add-settings-section").classList.add("hidden");
+    $("#sub-settings-section").classList.add("hidden");
+    $("#mul-settings-section").classList.add("hidden");
+    $("#div-settings-section").classList.remove("hidden");
   }
 }
 
@@ -248,7 +256,7 @@ async function fetchProblems(count, op, specificPayload) {
   }
 
   if (allProblems.length < count) {
-    const opName = op === "+" ? "加法" : (op === "-" ? "减法" : "乘法");
+    const opName = op === "+" ? "加法" : (op === "-" ? "减法" : (op === "*" ? "乘法" : "除法"));
     throw new Error(`可生成的 ${opName} 题目数量不足，请扩大范围或减少题目数量`);
   }
   return allProblems;
@@ -259,10 +267,11 @@ async function generate() {
   const addCount = Number($("#add_count").value) || 0;
   const subCount = Number($("#sub_count").value) || 0;
   const mulCount = Number($("#mul_count").value) || 0;
+  const divCount = Number($("#div_count").value) || 0;
   const groupCount = Math.max(1, Number($("#group_count").value) || 1);
 
-  if (addCount === 0 && subCount === 0 && mulCount === 0) {
-    messageEl.textContent = "加法、减法和乘法数量不能同时为 0。";
+  if (addCount === 0 && subCount === 0 && mulCount === 0 && divCount === 0) {
+    messageEl.textContent = "加法、减法、乘法和除法数量不能同时为 0。";
     return;
   }
 
@@ -271,6 +280,7 @@ async function generate() {
   let allAddProblems = [];
   let allSubProblems = [];
   let allMulProblems = [];
+  let allDivProblems = [];
 
   try {
     if (addCount > 0) {
@@ -303,6 +313,16 @@ async function generate() {
       };
       allMulProblems = await fetchProblems(mulCount * groupCount, "*", mulPayload);
     }
+    if (divCount > 0) {
+      const divPayload = {
+        a_min: payload.a_min,
+        a_max: payload.a_max,
+        b_min: payload.b_min,
+        b_max: payload.b_max,
+        division_control: payload.division_control,
+      };
+      allDivProblems = await fetchProblems(divCount * groupCount, "/", divPayload);
+    }
   } catch (err) {
     messageEl.textContent = "生成失败: " + err.message;
     return;
@@ -313,7 +333,8 @@ async function generate() {
     const groupAdd = allAddProblems.slice(groupIndex * addCount, (groupIndex + 1) * addCount);
     const groupSub = allSubProblems.slice(groupIndex * subCount, (groupIndex + 1) * subCount);
     const groupMul = allMulProblems.slice(groupIndex * mulCount, (groupIndex + 1) * mulCount);
-    const groupProblems = shuffle([...groupAdd, ...groupSub, ...groupMul]);
+    const groupDiv = allDivProblems.slice(groupIndex * divCount, (groupIndex + 1) * divCount);
+    const groupProblems = shuffle([...groupAdd, ...groupSub, ...groupMul, ...groupDiv]);
     groups.push(groupProblems);
   }
 
@@ -359,7 +380,8 @@ function render() {
 
       const input = document.createElement("input");
       input.className = "ans";
-      input.type = "number";
+      const isRemainderDiv = p.op === "/" && String(p.answer).includes(".");
+      input.type = isRemainderDiv ? "text" : "number";
       input.dataset.index = String(i);
       input.dataset.group = String(groupIndex);
       input.setAttribute("aria-label", "答案");
@@ -404,6 +426,22 @@ function updatePaginationUI() {
   nextPageBtn.disabled = currentPageIndex === currentGroups.length - 1;
 }
 
+function isAnswerCorrect(userInput, correctAnswer) {
+  const cleanInput = String(userInput).trim();
+  const cleanCorrect = String(correctAnswer).trim();
+
+  if (cleanInput === cleanCorrect) return true;
+
+  const inputNums = cleanInput.match(/\d+/g);
+  const correctNums = cleanCorrect.match(/\d+/g);
+
+  if (inputNums && correctNums && inputNums.length === correctNums.length) {
+    return inputNums.every((num, idx) => Number(num) === Number(correctNums[idx]));
+  }
+
+  return false;
+}
+
 function grade() {
   const currentGroupProblems = currentGroups[currentPageIndex] || [];
   if (currentGroupProblems.length === 0) return;
@@ -427,7 +465,7 @@ function grade() {
       return;
     }
     answered += 1;
-    const ok = Number(val) === currentGroupProblems[i].answer;
+    const ok = isAnswerCorrect(val, currentGroupProblems[i].answer);
     if (ok) {
       correctCount += 1;
       mark.textContent = "✓";
@@ -477,12 +515,26 @@ async function loadSettings() {
     if (settings.add_count !== undefined) $("#add_count").value = settings.add_count;
     if (settings.sub_count !== undefined) $("#sub_count").value = settings.sub_count;
     if (settings.mul_count !== undefined) $("#mul_count").value = settings.mul_count;
+    if (settings.div_count !== undefined) $("#div_count").value = settings.div_count;
     if (settings.group_count !== undefined) $("#group_count").value = settings.group_count;
     if (settings.a_min !== undefined) $("#a_min").value = settings.a_min;
     if (settings.a_max !== undefined) $("#a_max").value = settings.a_max;
     if (settings.b_min !== undefined) $("#b_min").value = settings.b_min;
     if (settings.b_max !== undefined) $("#b_max").value = settings.b_max;
     if (settings.no_negative !== undefined) $("#no_negative").checked = settings.no_negative;
+    if (settings.division_control !== undefined) {
+      const val = settings.division_control;
+      if (val === "no_remainder") {
+        $("#div_no_remainder").checked = true;
+        $("#div_with_remainder").checked = false;
+      } else if (val === "with_remainder") {
+        $("#div_no_remainder").checked = false;
+        $("#div_with_remainder").checked = true;
+      } else {
+        $("#div_no_remainder").checked = true;
+        $("#div_with_remainder").checked = true;
+      }
+    }
 
     setActiveOperator(activeOperator);
   } catch (err) {
@@ -491,7 +543,7 @@ async function loadSettings() {
 }
 
 function getPayload() {
-  const operators = ["+", "-", "*"];
+  const operators = ["+", "-", "*", "/"];
 
   // 收集进位控制:按数位分组检查
   const carryControl = {};
@@ -542,15 +594,26 @@ function getPayload() {
     }
   }
 
+  const divNoRemainder = $("#div_no_remainder").checked;
+  const divWithRemainder = $("#div_with_remainder").checked;
+  let divisionControl = "any";
+  if (divNoRemainder && !divWithRemainder) {
+    divisionControl = "no_remainder";
+  } else if (!divNoRemainder && divWithRemainder) {
+    divisionControl = "with_remainder";
+  }
+
   const add_count = Number($("#add_count").value) || 0;
   const sub_count = Number($("#sub_count").value) || 0;
   const mul_count = Number($("#mul_count").value) || 0;
+  const div_count = Number($("#div_count").value) || 0;
 
   return {
-    count: add_count + sub_count + mul_count,
+    count: add_count + sub_count + mul_count + div_count,
     add_count: add_count,
     sub_count: sub_count,
     mul_count: mul_count,
+    div_count: div_count,
     group_count: Number($("#group_count").value) || 1,
     a_min: Number($("#a_min").value),
     a_max: Number($("#a_max").value),
@@ -558,6 +621,7 @@ function getPayload() {
     b_max: Number($("#b_max").value),
     operators,
     no_negative: $("#no_negative").checked,
+    division_control: divisionControl,
     carry_control: Object.keys(carryControl).length > 0 ? carryControl : null,
     borrow_control: Object.keys(borrowControl).length > 0 ? borrowControl : null,
   };
