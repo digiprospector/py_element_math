@@ -674,68 +674,46 @@ async function generatePDF() {
     const date = new Date();
     const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
 
-    // 构建专用打印容器：克隆所有题目组，取消分页隐藏，显示打印头
-    const wrapper = document.createElement("div");
-    wrapper.style.cssText = [
-      "position:fixed", "top:0", "left:0",
-      "width:190mm", "padding:10mm",
-      "background:#fff", "z-index:-9999",
-      "font-family:'Microsoft YaHei',sans-serif",
-      "font-size:14pt", "color:#000"
-    ].join(";");
-
-    const clone = problemGroupsEl.cloneNode(true);
-
-    // 显示所有分组
-    clone.querySelectorAll(".problem-group").forEach((g) => {
-      g.classList.remove("hidden-page");
-      g.style.display = "block";
-      g.style.pageBreakAfter = "always";
-    });
-    // 显示打印专用头部，隐藏屏幕专用元素
-    clone.querySelectorAll(".print-only").forEach((el) => el.style.display = "flex");
-    clone.querySelectorAll(".no-print").forEach((el) => el.style.display = "none");
-    // 确保所有答案输入框可见（显示空白框）
-    clone.querySelectorAll(".ans").forEach((inp) => {
-      inp.style.border = "1px solid #999";
-      inp.style.width = "5rem";
-      inp.style.display = "inline-block";
-    });
-    // 标记元素
-    clone.querySelectorAll(".mark").forEach((m) => m.style.display = "none");
-
-    wrapper.appendChild(clone);
-    document.body.appendChild(wrapper);
+    // 进入 PDF 渲染模式 (在 body 上添加类名，应用专门为 PDF 渲染准备的 CSS)
+    document.body.classList.add("pdf-mode");
 
     const pdfOpts = {
-      margin: [8, 8, 8, 8],
-      image: { type: "jpeg", quality: 0.97 },
+      margin: [10, 10, 10, 10],
+      image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     };
 
     // ── PDF 1：不含答案 ──
-    clone.querySelectorAll(".correct").forEach((el) => { el.style.visibility = "hidden"; });
+    document.querySelectorAll(".correct").forEach((el) => {
+      el.style.setProperty("display", "none", "important");
+    });
     await html2pdf()
       .set({ ...pdfOpts, filename: `口算题_${dateStr}.pdf` })
-      .from(wrapper)
+      .from(problemGroupsEl)
       .save();
 
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 600));
 
     // ── PDF 2：含答案 ──
-    clone.querySelectorAll(".correct").forEach((el) => { el.style.visibility = "visible"; });
+    document.querySelectorAll(".correct").forEach((el) => {
+      el.style.setProperty("display", "inline-block", "important");
+    });
     await html2pdf()
       .set({ ...pdfOpts, filename: `口算题_答案_${dateStr}.pdf` })
-      .from(wrapper)
+      .from(problemGroupsEl)
       .save();
 
-    document.body.removeChild(wrapper);
     messageEl.textContent = `已生成两份 PDF（${dateStr}）`;
   } catch (err) {
     console.error(err);
     messageEl.textContent = "PDF 生成失败: " + err.message;
   } finally {
+    // 退出 PDF 渲染模式，恢复正常显示
+    document.body.classList.remove("pdf-mode");
+    document.querySelectorAll(".correct").forEach((el) => {
+      el.style.display = "";
+    });
     pdfBtn.disabled = false;
     pdfBtn.textContent = "生成 PDF";
     updatePaginationUI();

@@ -519,3 +519,62 @@ button:hover { filter: brightness(0.97); }
     text-align: center;
   }
 }
+
+/* PDF Mode Styles (for html2pdf generation) */
+body.pdf-mode {
+  max-width: none !important;
+  font-size: 12pt !important;
+  padding: 0 !important;
+  background: #fff !important;
+}
+body.pdf-mode .no-print {
+  display: none !important;
+}
+body.pdf-mode .print-only {
+  display: block !important;
+}
+body.pdf-mode .print-header {
+  display: flex !important;
+}
+body.pdf-mode .problem-group {
+  display: block !important;
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+  margin: 0 0 1.5cm !important;
+  page-break-after: always !important;
+}
+body.pdf-mode .problem-group .problems {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 0.8rem 0.6rem !important;
+  list-style: none !important;
+  padding: 0 !important;
+}
+body.pdf-mode .problem {
+  font-size: 13pt !important;
+  padding: 0 !important;
+  line-height: 1.2 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+body.pdf-mode .ans {
+  border: none !important;
+  border-bottom: 1px solid #666 !important;
+  font-size: 12pt !important;
+  text-align: center !important;
+  width: 3rem !important;
+  border-radius: 0 !important;
+  display: inline-block !important;
+  background: transparent !important;
+}
+body.pdf-mode .correct {
+  display: inline-block !important;
+  margin-left: 0.3rem !important;
+  font-size: 11pt !important;
+  color: var(--accent) !important;
+  font-weight: 700 !important;
+}
+body.pdf-mode .mark {
+  display: none !important;
+}
+
