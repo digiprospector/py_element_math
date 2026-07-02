@@ -678,7 +678,7 @@ async function generatePDF() {
     document.body.classList.add("pdf-mode");
 
     const pdfOpts = {
-      margin: [10, 10, 10, 10],
+      margin: [15, 10, 15, 10],
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
