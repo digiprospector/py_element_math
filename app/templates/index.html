@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>小学数学口算题目生成器</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="no-print">
+    <h1>小学数学口算题目生成器</h1>
+  </header>
+
+  <!-- 配置面板:打印时隐藏 -->
+  <section class="panel no-print">
+    <form id="config-form">
+      <!-- 算式模板:第一个数 / 运算符 / 第二个数 各自设定 -->
+      <div class="equation">
+        <div class="slot">
+          <div class="slot-box">第一个数</div>
+          <div class="slot-config">
+            <label>最小 <input type="number" id="a_min" value="0" min="0" max="10000" /></label>
+            <label>最大 <input type="number" id="a_max" value="20" min="0" max="10000" /></label>
+          </div>
+        </div>
+
+        <div class="slot op-slot">
+          <div class="slot-box op-box">运算符</div>
+          <div class="slot-config ops">
+            <label><input type="checkbox" name="op" value="+" checked /> 加 +</label>
+            <label><input type="checkbox" name="op" value="-" checked /> 减 −</label>
+          </div>
+        </div>
+
+        <div class="slot">
+          <div class="slot-box">第二个数</div>
+          <div class="slot-config">
+            <label>最小 <input type="number" id="b_min" value="0" min="0" max="10000" /></label>
+            <label>最大 <input type="number" id="b_max" value="20" min="0" max="10000" /></label>
+          </div>
+        </div>
+
+        <div class="slot equals">
+          <div class="slot-box eq-box">=</div>
+        </div>
+      </div>
+
+      <!-- 进位/退位控制:根据范围动态显示 -->
+      <div id="carry-borrow-controls" class="advanced-controls">
+        <div id="carry-section" class="control-section hidden">
+          <h3>加法进位设定</h3>
+          <div id="carry-digits" class="digit-controls"></div>
+        </div>
+        <div id="borrow-section" class="control-section hidden">
+          <h3>减法退位设定</h3>
+          <div id="borrow-digits" class="digit-controls"></div>
+        </div>
+      </div>
+
+      <!-- 其它选项 -->
+      <div class="options">
+        <label class="inline">题目数量
+          <input type="number" id="count" value="20" min="1" max="200" />
+        </label>
+        <label class="inline">
+          <input type="checkbox" id="no_negative" checked /> 减法避免负数结果
+        </label>
+        <button type="submit" class="primary">生成题目</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- 操作工具栏 -->
+  <section id="toolbar" class="toolbar no-print hidden">
+    <button type="button" id="toggle-answers">显示答案</button>
+    <button type="button" id="grade">在线判分</button>
+    <button type="button" id="print">打印</button>
+    <span id="score" class="score"></span>
+  </section>
+
+  <!-- 打印标题:仅打印时显示 -->
+  <div class="print-title print-only">
+    <span>姓名:____________</span>
+    <span>日期:____________</span>
+    <span>得分:____________</span>
+  </div>
+
+  <main>
+    <ol id="problems" class="problems"></ol>
+  </main>
+
+  <div id="message" class="message no-print"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
