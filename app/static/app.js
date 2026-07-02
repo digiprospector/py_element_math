@@ -64,6 +64,11 @@ function setActiveOperator(operator) {
     tab.setAttribute("aria-selected", String(selected));
   });
 
+  const currentOpLabel = $("#current-op-label");
+  if (currentOpLabel) {
+    currentOpLabel.textContent = activeOperator === "-" ? "−" : "+";
+  }
+
   if (activeOperator === "+") {
     $("#add-settings-section").classList.remove("hidden");
     $("#sub-settings-section").classList.add("hidden");
@@ -72,6 +77,7 @@ function setActiveOperator(operator) {
     $("#sub-settings-section").classList.remove("hidden");
   }
 }
+
 
 function updateCarryBorrowControls() {
   const aMin = Number(aMinInput.value);
