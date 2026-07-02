@@ -10,10 +10,12 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
+import yaml
 
 from .generator import generate
 
 BASE_DIR = Path(__file__).resolve().parent
+SETTINGS_FILE = BASE_DIR.parent / "settings.yaml"
 
 app = FastAPI(title="小学数学口算题目生成器")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
@@ -66,3 +68,42 @@ def api_generate(req: GenerateRequest):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"problems": [p.to_dict() for p in problems]}
+
+
+class UserSettings(BaseModel):
+    count: int = Field(20)
+    add_count: int = Field(10)
+    sub_count: int = Field(10)
+    group_count: int = Field(1)
+    a_min: int = Field(0)
+    a_max: int = Field(20)
+    b_min: int = Field(0)
+    b_max: int = Field(20)
+    operators: List[str] = Field(default_factory=lambda: ["+", "-"])
+    no_negative: bool = Field(True)
+    carry_control: Dict[int, Literal["carry", "no_carry", "any"]] | None = Field(None)
+    borrow_control: Dict[int, Literal["borrow", "no_borrow", "any"]] | None = Field(None)
+
+
+@app.get("/api/settings")
+def get_settings():
+    if not SETTINGS_FILE.exists():
+        return UserSettings().dict()
+    try:
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        return UserSettings(**data).dict()
+    except Exception as e:
+        print(f"Error loading settings: {e}")
+        return UserSettings().dict()
+
+
+@app.post("/api/settings")
+def save_settings(settings: UserSettings):
+    try:
+        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+            yaml.safe_dump(settings.dict(), f, allow_unicode=True)
+        return {"status": "ok"}
+    except Exception as e:
+        print(f"Error saving settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save settings")

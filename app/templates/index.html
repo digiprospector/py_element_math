@@ -13,7 +13,19 @@
 
   <!-- 配置面板:打印时隐藏 -->
   <section class="panel no-print">
-    <form id="config-form">
+    <div class="config-layout">
+      <div class="sidebar-container">
+        <div class="sidebar-item">
+          <label for="group_count">组数</label>
+          <input type="number" id="group_count" value="1" min="1" max="50" />
+        </div>
+        <nav class="operation-tabs" aria-label="运算类型">
+          <button type="button" class="operation-tab active" data-op="+" aria-selected="true">加法</button>
+          <button type="button" class="operation-tab" data-op="-" aria-selected="false">减法</button>
+        </nav>
+      </div>
+
+      <form id="config-form">
       <!-- 算式模板:第一个数 / 运算符 / 第二个数 各自设定 -->
       <div class="equation">
         <div class="slot">
@@ -25,11 +37,7 @@
         </div>
 
         <div class="slot op-slot">
-          <div class="slot-box op-box">运算符</div>
-          <div class="slot-config ops">
-            <label><input type="checkbox" name="op" value="+" checked /> 加 +</label>
-            <label><input type="checkbox" name="op" value="-" checked /> 减 −</label>
-          </div>
+          <div class="slot-box op-box" id="current-op-label">+ / −</div>
         </div>
 
         <div class="slot">
@@ -45,32 +53,46 @@
         </div>
       </div>
 
-      <!-- 进位/退位控制:根据范围动态显示 -->
+      <!-- 进位/退位控制与数量设置:根据选项卡切换显示 -->
       <div id="carry-borrow-controls" class="advanced-controls">
-        <div id="carry-section" class="control-section hidden">
-          <h3>加法进位设定</h3>
-          <div id="carry-digits" class="digit-controls"></div>
+        <div id="add-settings-section" class="tab-content-section">
+          <div class="count-option">
+            <label class="inline">加法每组数量
+              <input type="number" id="add_count" value="10" min="0" max="200" />
+            </label>
+          </div>
+          <div id="carry-section" class="control-section hidden">
+            <h3>加法进位设定</h3>
+            <div id="carry-digits" class="digit-controls"></div>
+          </div>
         </div>
-        <div id="borrow-section" class="control-section hidden">
-          <h3>减法退位设定</h3>
-          <div id="borrow-digits" class="digit-controls"></div>
+
+        <div id="sub-settings-section" class="tab-content-section hidden">
+          <div class="count-option">
+            <label class="inline">减法每组数量
+              <input type="number" id="sub_count" value="10" min="0" max="200" />
+            </label>
+          </div>
+          <div class="count-option">
+            <label class="inline" id="no-negative-option">
+              <input type="checkbox" id="no_negative" checked /> 减法避免负数结果
+            </label>
+          </div>
+          <div id="borrow-section" class="control-section hidden">
+            <h3>减法退位设定</h3>
+            <div id="borrow-digits" class="digit-controls"></div>
+          </div>
         </div>
       </div>
 
+
       <!-- 其它选项 -->
       <div class="options">
-        <label class="inline">题目数量
-          <input type="number" id="count" value="20" min="1" max="200" />
-        </label>
-        <label class="inline">组数
-          <input type="number" id="group_count" value="1" min="1" max="50" />
-        </label>
-        <label class="inline">
-          <input type="checkbox" id="no_negative" checked /> 减法避免负数结果
-        </label>
         <button type="submit" class="primary">生成题目</button>
+        <button type="button" id="save-settings" class="secondary">保存设定</button>
       </div>
-    </form>
+      </form>
+    </div>
   </section>
 
   <!-- 操作工具栏 -->
