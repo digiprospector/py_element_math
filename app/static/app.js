@@ -1,13 +1,13 @@
 "use strict";
 
 // 当前生成的题目(含答案),供判分与显示答案使用
-let currentProblems = [];
+let currentGroups = [];
 let answersShown = false;
 
 const $ = (sel) => document.querySelector(sel);
 
 const form = $("#config-form");
-const problemsEl = $("#problems");
+const problemGroupsEl = $("#problem-groups");
 const toolbar = $("#toolbar");
 const toggleBtn = $("#toggle-answers");
 const gradeBtn = $("#grade");
@@ -204,8 +204,11 @@ async function generate() {
     }
   }
 
+  const perGroupCount = Number($("#count").value);
+  const groupCount = Math.max(1, Number($("#group_count").value) || 1);
+  const totalCount = perGroupCount * groupCount;
   const payload = {
-    count: Number($("#count").value),
+    count: perGroupCount,
     a_min: Number($("#a_min").value),
     a_max: Number($("#a_max").value),
     b_min: Number($("#b_min").value),
@@ -218,68 +221,118 @@ async function generate() {
 
   console.log("发送参数:", JSON.stringify(payload, null, 2));
 
-  let resp;
-  try {
-    resp = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+  const allProblems = [];
+  const seen = new Set();
+  let attempts = 0;
+  while (allProblems.length < totalCount && attempts < 30) {
+    attempts += 1;
+    const batchCount = Math.min(200, totalCount - allProblems.length);
+    let resp;
+    try {
+      resp = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, count: batchCount }),
+      });
+    } catch (err) {
+      messageEl.textContent = "网络请求失败:" + err;
+      return;
+    }
+
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
+      messageEl.textContent = "生成失败:" + (data.detail || resp.status);
+      return;
+    }
+
+    const data = await resp.json();
+    data.problems.forEach((problem) => {
+      const key = `${problem.a}|${problem.op}|${problem.b}`;
+      if (!seen.has(key) && allProblems.length < totalCount) {
+        seen.add(key);
+        allProblems.push(problem);
+      }
     });
-  } catch (err) {
-    messageEl.textContent = "网络请求失败:" + err;
+  }
+
+  if (allProblems.length < totalCount) {
+    messageEl.textContent = "可生成的不重复题目数量不足，请扩大范围或减少题目数量";
     return;
   }
 
-  if (!resp.ok) {
-    const data = await resp.json().catch(() => ({}));
-    messageEl.textContent = "生成失败:" + (data.detail || resp.status);
-    return;
+  const groups = [];
+  for (let groupIndex = 0; groupIndex < groupCount; groupIndex++) {
+    const start = groupIndex * perGroupCount;
+    groups.push(allProblems.slice(start, start + perGroupCount));
   }
 
-  const data = await resp.json();
-  currentProblems = data.problems;
+  currentGroups = groups;
   render();
 }
 
 function render() {
-  problemsEl.innerHTML = "";
+  problemGroupsEl.innerHTML = "";
   answersShown = false;
   toggleBtn.textContent = "显示答案";
   scoreEl.textContent = "";
 
-  currentProblems.forEach((p, i) => {
-    const li = document.createElement("li");
+  currentGroups.forEach((groupProblems, groupIndex) => {
+    const section = document.createElement("section");
+    section.className = "problem-group";
 
-    const q = document.createElement("span");
-    q.className = "q";
-    q.textContent = p.text;
+    const header = document.createElement("div");
+    header.className = "print-header print-only";
+    header.innerHTML = [
+      '<div class="field">姓名:______________</div>',
+      '<div class="field">日期:______________</div>',
+      '<div class="field">得分:______________</div>',
+    ].join("");
 
-    const input = document.createElement("input");
-    input.className = "ans";
-    input.type = "number";
-    input.dataset.index = String(i);
-    input.setAttribute("aria-label", "答案");
+    const list = document.createElement("ol");
+    list.className = "problems";
 
-    const correct = document.createElement("span");
-    correct.className = "correct hidden";
-    correct.textContent = p.answer;
+    groupProblems.forEach((p, i) => {
+      const li = document.createElement("li");
+      li.className = "problem";
 
-    const mark = document.createElement("span");
-    mark.className = "mark";
+      const q = document.createElement("span");
+      q.className = "q";
+      q.textContent = p.text;
 
-    li.append(q, input, correct, mark);
-    problemsEl.appendChild(li);
+      const input = document.createElement("input");
+      input.className = "ans";
+      input.type = "number";
+      input.dataset.index = String(i);
+      input.dataset.group = String(groupIndex);
+      input.setAttribute("aria-label", "答案");
+
+      const correct = document.createElement("span");
+      correct.className = "correct hidden";
+      correct.textContent = p.answer;
+
+      const mark = document.createElement("span");
+      mark.className = "mark";
+
+      li.append(q, input, correct, mark);
+      list.appendChild(li);
+    });
+
+    section.append(header, list);
+    problemGroupsEl.appendChild(section);
   });
 
   toolbar.classList.remove("hidden");
 }
-
 function grade() {
-  if (currentProblems.length === 0) return;
+  const firstGroupProblems = currentGroups[0] || [];
+  if (firstGroupProblems.length === 0) return;
+  const firstGroup = problemGroupsEl.querySelector(".problem-group");
+  if (!firstGroup) return;
+
   let correctCount = 0;
   let answered = 0;
 
-  problemsEl.querySelectorAll("li").forEach((li, i) => {
+  firstGroup.querySelectorAll("li").forEach((li, i) => {
     const input = li.querySelector(".ans");
     const mark = li.querySelector(".mark");
     const val = input.value.trim();
@@ -292,7 +345,7 @@ function grade() {
       return;
     }
     answered += 1;
-    const ok = Number(val) === currentProblems[i].answer;
+    const ok = Number(val) === firstGroupProblems[i].answer;
     if (ok) {
       correctCount += 1;
       mark.textContent = "✓";
@@ -305,7 +358,7 @@ function grade() {
     }
   });
 
-  const total = currentProblems.length;
+  const total = firstGroupProblems.length;
   scoreEl.textContent = `已答 ${answered}/${total},正确 ${correctCount},得分 ${Math.round(
     (correctCount / total) * 100
   )} 分`;

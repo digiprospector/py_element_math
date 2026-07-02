@@ -25,7 +25,7 @@ def test_subtraction_no_negative():
 
 def test_subtraction_can_allow_negative():
     seen_negative = False
-    for p in generate(300, 0, 10, 0, 10, ["-"], no_negative=False):
+    for p in generate(300, 0, 30, 0, 30, ["-"], no_negative=False):
         assert p.answer == p.a - p.b
         if p.answer < 0:
             seen_negative = True
@@ -33,7 +33,7 @@ def test_subtraction_can_allow_negative():
 
 
 def test_multiplication():
-    for p in generate(100, 1, 9, 1, 9, ["*"]):
+    for p in generate(100, 1, 20, 1, 20, ["*"]):
         assert p.answer == p.a * p.b
 
 
@@ -45,8 +45,23 @@ def test_division_is_exact_and_no_zero_divisor():
 
 
 def test_mixed_operators_only_selected():
-    ops = {p.op for p in generate(300, 1, 20, 1, 20, ["+", "-"])}
+    ops = {p.op for p in generate(300, 1, 30, 1, 30, ["+", "-"])}
     assert ops <= {"+", "-"}
+
+
+def test_generated_problems_are_unique():
+    problems = generate(120, 0, 20, 0, 20, ["+", "-"])
+    keys = {(p.a, p.op, p.b) for p in problems}
+    assert len(keys) == len(problems)
+
+
+def test_unique_generation_raises_when_space_is_too_small():
+    try:
+        generate(2, 1, 1, 1, 1, ["+"])
+    except ValueError as exc:
+        assert "不重复题目数量不足" in str(exc)
+    else:
+        raise AssertionError("题库空间不足时应抛出 ValueError")
 
 
 def test_range_can_be_reversed():

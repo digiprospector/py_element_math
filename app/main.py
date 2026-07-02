@@ -21,7 +21,7 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 class GenerateRequest(BaseModel):
-    count: int = Field(20, ge=1, le=200, description="题目数量")
+    count: int = Field(20, ge=1, le=10000, description="题目数量")
     a_min: int = Field(0, ge=0, le=10000, description="第一个数最小值")
     a_max: int = Field(20, ge=0, le=10000, description="第一个数最大值")
     b_min: int = Field(0, ge=0, le=10000, description="第二个数最小值")

@@ -169,6 +169,10 @@ def _make_one(
     raise ValueError(f"不支持的运算符: {op!r}")
 
 
+def _problem_key(problem: Problem) -> tuple[int, str, int]:
+    return (problem.a, problem.op, problem.b)
+
+
 def generate(
     count: int,
     a_min: int,
@@ -212,8 +216,12 @@ def generate(
         else None
     )
 
-    return [
-        _make_one(
+    problems: list[Problem] = []
+    seen: set[tuple[int, str, int]] = set()
+    max_attempts = max(1000, count * 200)
+
+    for _ in range(max_attempts):
+        problem = _make_one(
             a_min,
             a_max,
             b_min,
@@ -223,5 +231,12 @@ def generate(
             carry_ctrl,
             borrow_ctrl,
         )
-        for _ in range(count)
-    ]
+        key = _problem_key(problem)
+        if key in seen:
+            continue
+        seen.add(key)
+        problems.append(problem)
+        if len(problems) == count:
+            return problems
+
+    raise ValueError("可生成的不重复题目数量不足，请扩大范围或减少题目数量")

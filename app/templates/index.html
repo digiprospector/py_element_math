@@ -62,6 +62,9 @@
         <label class="inline">题目数量
           <input type="number" id="count" value="20" min="1" max="200" />
         </label>
+        <label class="inline">组数
+          <input type="number" id="group_count" value="1" min="1" max="50" />
+        </label>
         <label class="inline">
           <input type="checkbox" id="no_negative" checked /> 减法避免负数结果
         </label>
@@ -78,15 +81,8 @@
     <span id="score" class="score"></span>
   </section>
 
-  <!-- 打印标题:仅打印时显示 -->
-  <div class="print-title print-only">
-    <span>姓名:____________</span>
-    <span>日期:____________</span>
-    <span>得分:____________</span>
-  </div>
-
   <main>
-    <ol id="problems" class="problems"></ol>
+    <div id="problem-groups"></div>
   </main>
 
   <div id="message" class="message no-print"></div>
