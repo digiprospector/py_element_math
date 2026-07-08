@@ -572,13 +572,11 @@ button:hover { filter: brightness(0.97); }
 }
 .pdf-mode .problem-group {
   display: block !important;
-  break-inside: avoid !important;
-  page-break-inside: avoid !important;
-  margin: 0 0 2.2rem !important; /* 加大两组之间的间隔，撑满页面 */
+  margin: 0 0 0.5rem !important;
 }
 .pdf-mode .problem {
   font-size: 13pt !important;
-  padding: 0.36rem 0 !important; /* 加大行距，使120题刚好占满一页 */
+  padding: 0.36rem 0 !important;
   line-height: 1 !important;
   page-break-inside: avoid !important;
   display: flex !important;
@@ -603,16 +601,23 @@ button:hover { filter: brightness(0.97); }
   display: none !important;
 }
 .pdf-mode .problem input {
-  display: inline-block !important; 
+  display: inline-block !important;
   width: 3rem !important;
   border: none !important;
-  border-bottom: none !important; /* 题目的 PDF 中等号后显示为空格，没有横线 */
-  font-size: 12pt !important;
+  border-bottom: none !important;
+  font-size: inherit !important;
   text-align: center !important;
   background: transparent !important;
   border-radius: 0 !important;
   padding: 0 !important;
-  height: auto !important;
+  margin: 0 !important;
+  height: 1em !important;
+  min-height: 0 !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+  vertical-align: baseline !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
 }
 
 
