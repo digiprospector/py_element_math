@@ -505,6 +505,7 @@ button:hover { filter: brightness(0.97); }
     margin: 0 0 0.8rem;
   }
 
+
   .problem {
     font-size: 13pt;
     padding: 0;
@@ -574,6 +575,7 @@ button:hover { filter: brightness(0.97); }
   display: block !important;
   margin: 0 0 0.5rem !important;
 }
+
 .pdf-mode .problem {
   font-size: 13pt !important;
   padding: 0.36rem 0 !important;

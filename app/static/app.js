@@ -414,6 +414,9 @@ function render() {
     problemGroupsEl.appendChild(section);
   });
 
+  // 智能分页：估算每组在 A4 页面上的占用高度(mm)，累积超出时插入分页标记
+  insertSmartPageBreaks();
+
   if (currentGroups.length > 1) {
     paginationControls.classList.remove("hidden");
   } else {
@@ -738,4 +741,44 @@ async function generatePDF() {
     pdfBtn.textContent = "生成 PDF";
     updatePaginationUI();
   }
+}
+
+/**
+ * 智能分页：估算每组题目在 A4 页面上的占用高度(mm)，
+ * 当累积高度超过可用区域时，在该组前插入 html2pdf 分页标记。
+ *
+ * 估算参数（基于 PDF 渲染的 4 列布局）：
+ *   - A4 可用高度 ≈ 267mm（297mm - 上下边距各 15mm）
+ *   - 每行题目高度 ≈ 7.5mm（13pt 字号 + 行间距）
+ *   - 打印头部(姓名/日期/得分) ≈ 20mm
+ *   - 组间距 ≈ 5mm
+ */
+function insertSmartPageBreaks() {
+  const PAGE_H = 267;       // A4 可用高度 (mm)
+  const ROW_H = 7.2;        // 每行题目高度 (mm)：13pt字号 + 0.36rem上下内边距
+  const HEADER_H = 10;      // 打印头部高度 (mm)：11pt字号 + padding + margin
+  const GAP_H = 3;           // 组间距 (mm)：0.5rem margin + 0.4rem margin-top
+  const COLS = 4;            // PDF 列数
+
+  // 先清除之前可能残留的分页标记
+  problemGroupsEl.querySelectorAll(".html2pdf__page-break").forEach((el) => el.remove());
+
+  const groups = problemGroupsEl.querySelectorAll(".problem-group");
+  let accumulated = 0;
+
+  groups.forEach((group, index) => {
+    const problemCount = group.querySelectorAll(".problem").length;
+    const rows = Math.ceil(problemCount / COLS);
+    const groupHeight = HEADER_H + rows * ROW_H + (index > 0 ? GAP_H : 0);
+
+    if (index > 0 && accumulated + groupHeight > PAGE_H) {
+      // 当前页放不下这一组，在其前面插入分页
+      const pageBreak = document.createElement("div");
+      pageBreak.className = "html2pdf__page-break";
+      group.parentNode.insertBefore(pageBreak, group);
+      accumulated = HEADER_H + rows * ROW_H; // 新页从此组开始
+    } else {
+      accumulated += groupHeight;
+    }
+  });
 }
