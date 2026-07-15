@@ -385,7 +385,7 @@ function render() {
       // 创建序号 span 并根据数量前补 0
       const seq = document.createElement("span");
       seq.className = "seq";
-      seq.textContent = `${String(i + 1).padStart(maxDigits, "0")}. `;
+      seq.textContent = `(${String(i + 1).padStart(maxDigits, "0")}) `;
 
       const q = document.createElement("span");
       q.className = "q";
